@@ -86,48 +86,48 @@ func (r *queryResolver) Categories(ctx context.Context) ([]*model.Category, erro
 
 // Courses is the resolver for the courses field.
 func (r *queryResolver) Courses(ctx context.Context) ([]*model.Course, error) {
-
 	var coursesModel []*model.Course
-	fields := graphql.CollectFieldsCtx(ctx, nil)
-	for _, field := range fields {
-		if field.Name == "category" {
-			courses, err := r.CourseDB.FindCategoryInCourse(r.CourseDB.CategoryID)
-			if err != nil {
-				return nil, err
-			}
-			categoryIDs := []string{}
-			for _, course := range courses {
-				coursesModel = append(coursesModel, &model.Course{
-					ID:          course.ID,
-					Name:        course.Name,
-					Description: &course.Description,
-				})
-				uniquesID := make(map[string]bool)
+	// fields := graphql.CollectFieldsCtx(ctx, nil)
+	fields := graphql.CollectAllFields(ctx)
+	if fields[len(fields)-1] == "category" {
+		courses, err := r.CourseDB.FindCategoryInCourse(r.CourseDB.CategoryID)
+		if err != nil {
+			return nil, err
+		}
+		categoryIDs := []string{}
+		for _, course := range courses {
+			coursesModel = append(coursesModel, &model.Course{
+				ID:          course.ID,
+				Name:        course.Name,
+				Description: &course.Description,
+			})
 
-				for _, id := range categoryIDs {
-					if uniquesID[id] {
-						uniquesID[id] = true
-						categoryIDs = append(categoryIDs, id)
-					}
+			uniquesID := make(map[string]bool)
+
+			for _, id := range categoryIDs {
+				if uniquesID[id] {
+					uniquesID[id] = true
+					categoryIDs = append(categoryIDs, id)
 				}
 			}
-			return coursesModel, nil
-		} else {
-			courses, err := r.CourseDB.FindAll()
-			if err != nil {
-				return nil, err
-			}
-			for _, course := range courses {
-				coursesModel = append(coursesModel, &model.Course{
-					ID:          course.ID,
-					Name:        course.Name,
-					Description: &course.Description,
-				})
-			}
-			return coursesModel, nil
+
 		}
+		return coursesModel, nil
+		
+	} else {
+		courses, err := r.CourseDB.FindAll()
+		if err != nil {
+			return nil, err
+		}
+		for _, course := range courses {
+			coursesModel = append(coursesModel, &model.Course{
+				ID:          course.ID,
+				Name:        course.Name,
+				Description: &course.Description,
+			})
+		}
+		return coursesModel, nil
 	}
-	return coursesModel, nil
 }
 
 // Category returns generated.CategoryResolver implementation.

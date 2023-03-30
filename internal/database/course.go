@@ -2,6 +2,7 @@ package database
 
 import (
 	"database/sql"
+	"fmt"
 
 	"github.com/google/uuid"
 )
@@ -12,6 +13,7 @@ type Course struct {
 	Name        string
 	Description string
 	CategoryID  string
+	Category    Category
 }
 
 func NewCourse(db *sql.DB) *Course {
@@ -80,22 +82,34 @@ func (c *Course) FindCategoryInCourse(categoryID string) ([]Course, error) {
 		if err := rowsCourse.Scan(&id, &name, &description, &categoryID); err != nil {
 			return nil, err
 		}
-		courses = append(courses, Course{ID: id, Name: name, Description: description})
-
-		uniquesID := make(map[string]bool)
-
-		for _, id := range categoryIDs {
-			if uniquesID[id] {
-				uniquesID[id] = true
+		courses = append(courses, Course{ID: id, Name: name, Description: description, CategoryID: categoryID})
+		
+		for _, c := range courses {
+			if c.CategoryID != categoryID {
 				categoryIDs = append(categoryIDs, categoryID)
 			}
 		}
 	}
 
-	var id, name, description string
-	err = c.db.QueryRow("SELECT * FROM categories WHERE categories.id IN (?)", categoryID).Scan(&id, &name, &description)
+
+	rowsCategory, err := c.db.Query("SELECT * FROM categories WHERE categories.id IN (?)", categoryID)
 	if err != nil {
-		return nil, err
+		fmt.Println(err)
 	}
+	defer rowsCategory.Close()
+	categories := []Category{}
+	for _, course := range courses {
+		for rowsCategory.Next() {
+			var id, name, description string
+			if err := rowsCategory.Scan(&id, &name, &description); err != nil {
+				return nil, err
+			}
+			if id == course.CategoryID {
+				categories = append(categories, Category{ID: id, Name: name, Description: description})
+				courses = append(courses, Course{ID: id, Name: name, Description: description, Category: Category{ID: id, Name: name, Description: description}})
+			}
+		}
+	}
+
 	return courses, nil
 }
