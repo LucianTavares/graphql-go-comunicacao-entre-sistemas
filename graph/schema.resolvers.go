@@ -6,7 +6,7 @@ package graph
 import (
 	"context"
 
-	"github.com/99designs/gqlgen/graphql"
+	"github.com/LucianTavares/comunicacao_entre_sistemas/graphql/graph/dataloader"
 	"github.com/LucianTavares/comunicacao_entre_sistemas/graphql/graph/generated"
 	"github.com/LucianTavares/comunicacao_entre_sistemas/graphql/graph/model"
 )
@@ -30,15 +30,8 @@ func (r *categoryResolver) Courses(ctx context.Context, obj *model.Category) ([]
 
 // Category is the resolver for the category field.
 func (r *courseResolver) Category(ctx context.Context, obj *model.Course) (*model.Category, error) {
-	category, err := r.CategoryDB.FindByCourseID(obj.ID)
-	if err != nil {
-		return nil, err
-	}
-	return &model.Category{
-		ID:          category.ID,
-		Name:        category.Name,
-		Description: &category.Description,
-	}, nil
+	// fmt.Printf("courseResolver.Category, course=%s\n", obj.ID, obj.CategoryID)
+	return dataloader.For(ctx).GetCategory(ctx, obj.CategoryID)
 }
 
 // CreateCategory is the resolver for the createCategory field.
@@ -87,47 +80,47 @@ func (r *queryResolver) Categories(ctx context.Context) ([]*model.Category, erro
 // Courses is the resolver for the courses field.
 func (r *queryResolver) Courses(ctx context.Context) ([]*model.Course, error) {
 	var coursesModel []*model.Course
-	// fields := graphql.CollectFieldsCtx(ctx, nil)
-	fields := graphql.CollectAllFields(ctx)
-	if fields[len(fields)-1] == "category" {
-		courses, err := r.CourseDB.FindCategoryInCourse(r.CourseDB.CategoryID)
-		if err != nil {
-			return nil, err
-		}
-		categoryIDs := []string{}
-		for _, course := range courses {
-			coursesModel = append(coursesModel, &model.Course{
-				ID:          course.ID,
-				Name:        course.Name,
-				Description: &course.Description,
-			})
+	// // fields := graphql.CollectFieldsCtx(ctx, nil)
+	// fields := graphql.CollectAllFields(ctx)
+	// if fields[len(fields)-1] == "category" {
+	// 	courses, err := r.CourseDB.FindCategoryInCourse(r.CourseDB.CategoryID)
+	// 	if err != nil {
+	// 		return nil, err
+	// 	}
+	// 	categoryIDs := []string{}
+	// 	for _, course := range courses {
+	// 		coursesModel = append(coursesModel, &model.Course{
+	// 			ID:          course.ID,
+	// 			Name:        course.Name,
+	// 			Description: &course.Description,
+	// 		})
 
-			uniquesID := make(map[string]bool)
+	// 		uniquesID := make(map[string]bool)
 
-			for _, id := range categoryIDs {
-				if uniquesID[id] {
-					uniquesID[id] = true
-					categoryIDs = append(categoryIDs, id)
-				}
-			}
+	// 		for _, id := range categoryIDs {
+	// 			if uniquesID[id] {
+	// 				uniquesID[id] = true
+	// 				categoryIDs = append(categoryIDs, id)
+	// 			}
+	// 		}
 
-		}
-		return coursesModel, nil
-		
-	} else {
-		courses, err := r.CourseDB.FindAll()
-		if err != nil {
-			return nil, err
-		}
-		for _, course := range courses {
-			coursesModel = append(coursesModel, &model.Course{
-				ID:          course.ID,
-				Name:        course.Name,
-				Description: &course.Description,
-			})
-		}
-		return coursesModel, nil
+	// 	}
+	// 	return coursesModel, nil
+
+	// } else {
+	courses, err := r.CourseDB.FindAll()
+	if err != nil {
+		return nil, err
 	}
+	for _, course := range courses {
+		coursesModel = append(coursesModel, &model.Course{
+			ID:          course.ID,
+			Name:        course.Name,
+			Description: &course.Description,
+		})
+	}
+	return coursesModel, nil
+	// }
 }
 
 // Category returns generated.CategoryResolver implementation.

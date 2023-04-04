@@ -1,9 +1,10 @@
 package database
 
 import (
+	"context"
 	"database/sql"
-	// "log"
 
+	"github.com/LucianTavares/comunicacao_entre_sistemas/graphql/graph/model"
 	"github.com/google/uuid"
 )
 
@@ -12,6 +13,28 @@ type Category struct {
     ID string
     Name string
     Description string
+}
+
+type MemoryStorage struct {
+	categories map[string]*model.Category
+	courses map[string]*model.Course
+}
+
+func NewMemoryStorage() *MemoryStorage {
+	return &MemoryStorage{
+		categories: make(map[string]*model.Category),
+		courses: make(map[string]*model.Course),
+	}
+}
+
+func (m *MemoryStorage) GetCategories(ctx context.Context, categoryIDs []string) ([]*model.Category) {
+    output := make([]*model.Category, 0, len(categoryIDs))
+	for _, id := range categoryIDs {
+        if ctg, ok := m.categories[id]; ok {
+            output = append(output, ctg)
+		}
+	}
+	return output
 }
 
 func NewCategory(db *sql.DB) *Category {
