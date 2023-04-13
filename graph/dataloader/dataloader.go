@@ -23,11 +23,12 @@ type DataLoader struct {
 }
 
 type categoryBatcher struct {
-	db database.Category
+	db database.Categories
 }
 
 func (i *DataLoader) GetCategory(ctx context.Context, categoryID string) (*model.Category, error) {
-
+	
+	// fmt.Printf("result = %v", )
 	thunk := i.categoryLoader.Load(ctx, gopher_dataloader.StringKey(categoryID))
 	result, err := thunk()
 	if err != nil {
@@ -36,9 +37,8 @@ func (i *DataLoader) GetCategory(ctx context.Context, categoryID string) (*model
 	return result.(*model.Category), nil
 }
 
-func NewDataLoader(db database.Category) *DataLoader {
+func NewDataLoader(db database.Categories) *DataLoader {
 	categories := &categoryBatcher{db: db}
-
 	return &DataLoader{
 		categoryLoader: dataloader.NewBatchedLoader(categories.get),
 	}
@@ -57,7 +57,8 @@ func For(ctx context.Context) *DataLoader {
 }
 
 func (c *categoryBatcher) get(ctx context.Context, keys dataloader.Keys) []*dataloader.Result {
-	fmt.Printf("dataloader.categoryBatcher.get, categories: [%s]\n", strings.Join(keys.Keys(), ","))
+	fmt.Printf("dataloader.categoryBatcher.get, category: [%s]\n", strings.Join(keys.Keys(), ","))
+	fmt.Printf("IDS %v", keys.Keys())
 
 	keyOrder := make(map[string]int, len(keys))
 
@@ -68,9 +69,11 @@ func (c *categoryBatcher) get(ctx context.Context, keys dataloader.Keys) []*data
 		keyOrder[key.String()] = ix
 	}
 
-	dbRecords, err := c.db.FindAll()
-	if err != nil {
-		return []*dataloader.Result{{Data: nil, Error: err}}
+	fmt.Printf("%v", keys)
+
+	dbRecords := c.db.GetAllCategories(ctx, categoryIDs)
+	if dbRecords != nil {
+		return []*dataloader.Result{{Data: nil}}
 	}
 
 	results := make([]*dataloader.Result, len(keys))

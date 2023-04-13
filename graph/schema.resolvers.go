@@ -5,6 +5,7 @@ package graph
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/LucianTavares/comunicacao_entre_sistemas/graphql/graph/dataloader"
 	"github.com/LucianTavares/comunicacao_entre_sistemas/graphql/graph/generated"
@@ -30,7 +31,7 @@ func (r *categoryResolver) Courses(ctx context.Context, obj *model.Category) ([]
 
 // Category is the resolver for the category field.
 func (r *courseResolver) Category(ctx context.Context, obj *model.Course) (*model.Category, error) {
-	// fmt.Printf("courseResolver.Category, course=%s\n", obj.ID, obj.CategoryID)
+	fmt.Printf("courseResolver.Category, course=%s, categoryId=%s \n", obj.ID, obj.CategoryID)
 	return dataloader.For(ctx).GetCategory(ctx, obj.CategoryID)
 }
 

@@ -69,16 +69,6 @@ func (c *Course) FindByCategoryID(categoryID string) ([]Course, error) {
 	return courses, nil
 }
 
-// func (m *MemoryStorage) GetCategories(ctx context.Context, categoryIDs []string) ([]*model.Category) {
-// 	output := make([]*model.Category, 0, len(categoryIDs))
-// 	for _, id := range categoryIDs {
-// 		if ctg, ok := m.categories[id]; ok {
-// 			output = append(output, ctg)
-// 		}
-// 	}
-// 	return output
-// }
-
 func (c *Course) FindCategoryInCourse(categoryID string) ([]Course, error) {
 	rowsCourse, err := c.db.Query("SELECT * FROM courses")
 	if err != nil {
