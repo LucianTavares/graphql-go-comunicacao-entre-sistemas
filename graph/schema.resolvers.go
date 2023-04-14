@@ -118,6 +118,7 @@ func (r *queryResolver) Courses(ctx context.Context) ([]*model.Course, error) {
 			ID:          course.ID,
 			Name:        course.Name,
 			Description: &course.Description,
+			CategoryID:  course.CategoryID,
 		})
 	}
 	return coursesModel, nil
