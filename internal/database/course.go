@@ -3,7 +3,7 @@ package database
 import (
 	"database/sql"
 	"fmt"
-	
+
 	"github.com/google/uuid"
 )
 
@@ -83,14 +83,13 @@ func (c *Course) FindCategoryInCourse(categoryID string) ([]Course, error) {
 			return nil, err
 		}
 		courses = append(courses, Course{ID: id, Name: name, Description: description, CategoryID: categoryID})
-		
+
 		for _, c := range courses {
 			if c.CategoryID != categoryID {
 				categoryIDs = append(categoryIDs, categoryID)
 			}
 		}
 	}
-
 
 	rowsCategory, err := c.db.Query("SELECT * FROM categories WHERE categories.id IN (?)", categoryID)
 	if err != nil {
@@ -105,8 +104,8 @@ func (c *Course) FindCategoryInCourse(categoryID string) ([]Course, error) {
 				return nil, err
 			}
 			if id == course.CategoryID {
-				categories = append(categories, Category{ID: id, Name: name, Description: description})
-				courses = append(courses, Course{ID: id, Name: name, Description: description, Category: Category{ID: id, Name: name, Description: description}})
+				categories = append(categories, Category{ID: id, Name: name, Description: &description})
+				courses = append(courses, Course{ID: id, Name: name, Description: description, Category: Category{ID: id, Name: name, Description: &description}})
 			}
 		}
 	}

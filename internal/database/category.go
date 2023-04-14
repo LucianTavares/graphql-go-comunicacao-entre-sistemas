@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"strings"
 
 	"github.com/LucianTavares/comunicacao_entre_sistemas/graphql/graph/model"
 	"github.com/google/uuid"
@@ -13,7 +14,7 @@ type Category struct {
 	db          *sql.DB
 	ID          string
 	Name        string
-	Description string
+	Description *string
 }
 
 type Categories interface {
@@ -36,33 +37,38 @@ func NewMemoryStorage() *MemoryStorage {
 	}
 }
 
-// func (m *MemoryStorage) NewCategory(ctx context.Context, categ *model.Category) error {
-// 	return &Category{db: db}
-// }
+func NewCategory(db *sql.DB) *Category {
+	return &Category{db: db}
+}
 
 func (m *MemoryStorage) GetAllCategories(ctx context.Context, categoryIDs []string) []*model.Category {
-	rowsCategory, err := m.db.Query("SELECT * FROM categories WHERE categories.id IN (?)", categoryIDs)
-    fmt.Printf("%v", categoryIDs)
+	fmt.Printf("%v", categoryIDs)
+
+	slice := make([]interface{}, len(categoryIDs))
+	for i, v := range categoryIDs {
+		slice[i] = v
+	}
+
+	rowsCategory, err := m.db.Query("select * from categories")
 	if err != nil {
 		return nil
 	}
 	defer rowsCategory.Close()
 
-
-    output := make([]*model.Category, 0, len(categoryIDs))
+	output := make([]*model.Category, 0, len(categoryIDs))
 	for rowsCategory.Next() {
-        var id string
+		var id string
 		if err := rowsCategory.Scan(&id); err != nil {
-            return nil
+			return nil
 		}
 		for _, id := range categoryIDs {
-            if ctg, ok := m.categories[id]; ok {
-                output = append(output, ctg)
+			if ctg, ok := m.categories[id]; ok {
+				output = append(output, ctg)
 			}
 		}
 	}
 
-    return output
+	return output
 
 }
 
@@ -73,7 +79,7 @@ func (c *Category) Create(name string, description string) (Category, error) {
 	if err != nil {
 		return Category{}, err
 	}
-	return Category{ID: id, Name: name, Description: description}, nil
+	return Category{ID: id, Name: name, Description: &description}, nil
 }
 
 func (c *Category) FindAll() ([]Category, error) {
@@ -88,7 +94,7 @@ func (c *Category) FindAll() ([]Category, error) {
 		if err := rows.Scan(&id, &name, &description); err != nil {
 			return nil, err
 		}
-		categories = append(categories, Category{ID: id, Name: name, Description: description})
+		categories = append(categories, Category{ID: id, Name: name, Description: &description})
 	}
 	return categories, nil
 }
@@ -100,5 +106,38 @@ func (c *Category) FindByCourseID(courseID string) (Category, error) {
 	if err != nil {
 		return Category{}, err
 	}
-	return Category{ID: id, Name: name, Description: description}, nil
+	return Category{ID: id, Name: name, Description: &description}, nil
+}
+
+func (c *Category) FindByIds(ids []string) ([]Category, error) {
+	slice := make([]interface{}, len(ids))
+	for i, v := range ids {
+		slice[i] = v
+	}
+
+	rows, error := c.db.Query("SELECT id, name, description FROM categories WHERE id IN (?"+strings.Repeat(",?", len(slice)-1)+")", slice...)
+
+	if error != nil {
+		return nil, error
+	}
+	defer rows.Close()
+	categories := []Category{}
+	for rows.Next() {
+		var id, name string
+		var description sql.NullString
+
+		if err := rows.Scan(&id, &name, &description); err != nil {
+			return nil, err
+		}
+		var descriptionPtr *string
+
+		if description.Valid {
+			descriptionPtr = &description.String
+		} else {
+			descriptionPtr = nil
+		}
+
+		categories = append(categories, Category{ID: id, Name: name, Description: descriptionPtr})
+	}
+	return categories, nil
 }
