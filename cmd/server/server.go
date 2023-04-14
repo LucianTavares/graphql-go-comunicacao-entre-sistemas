@@ -24,12 +24,10 @@ func main() {
 	}
 	defer db.Close()
 
-	// categoryDb := database.NewCategory(db)
+	categoryDb := database.NewCategory(db)
 	courseDb := database.NewCourse(db)
 
-	dbs := database.NewMemoryStorage()
-
-	loader := dataloader.NewDataLoader(dbs)
+	loader := dataloader.NewDataLoader(categoryDb)
 
 	port := os.Getenv("PORT")
 	if port == "" {
@@ -37,7 +35,7 @@ func main() {
 	}
 
 	srv := handler.NewDefaultServer(generated.NewExecutableSchema(generated.Config{Resolvers: &graph.Resolver{
-		CourseDB:   courseDb,
+		CourseDB: courseDb,
 	}}))
 
 	dataloaderSrv := dataloader.Middleware(loader, srv)

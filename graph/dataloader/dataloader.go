@@ -2,9 +2,7 @@ package dataloader
 
 import (
 	"context"
-	"fmt"
 	"net/http"
-	"strings"
 
 	"github.com/LucianTavares/comunicacao_entre_sistemas/graphql/graph/model"
 	"github.com/LucianTavares/comunicacao_entre_sistemas/graphql/internal/database"
@@ -23,22 +21,23 @@ type DataLoader struct {
 }
 
 type categoryBatcher struct {
-	db database.Categories
+	category *database.Category
 }
 
 func (i *DataLoader) GetCategory(ctx context.Context, categoryID string) (*model.Category, error) {
-	
-	// fmt.Printf("result = %v", )
+
 	thunk := i.categoryLoader.Load(ctx, gopher_dataloader.StringKey(categoryID))
+	println("aaaaa")
 	result, err := thunk()
+
 	if err != nil {
 		return nil, err
 	}
 	return result.(*model.Category), nil
 }
 
-func NewDataLoader(db database.Categories) *DataLoader {
-	categories := &categoryBatcher{db: db}
+func NewDataLoader(categoryModel *database.Category) *DataLoader {
+	categories := &categoryBatcher{category: categoryModel}
 	return &DataLoader{
 		categoryLoader: dataloader.NewBatchedLoader(categories.get),
 	}
@@ -57,38 +56,38 @@ func For(ctx context.Context) *DataLoader {
 }
 
 func (c *categoryBatcher) get(ctx context.Context, keys dataloader.Keys) []*dataloader.Result {
-	fmt.Printf("dataloader.categoryBatcher.get, category: [%s]\n", strings.Join(keys.Keys(), ","))
-	fmt.Printf("IDS %v", keys.Keys())
-
-	keyOrder := make(map[string]int, len(keys))
-
-	var categoryIDs []string
-
+	categoryIDs := make([]string, len(keys))
 	for ix, key := range keys {
-		categoryIDs = append(categoryIDs, key.String())
-		keyOrder[key.String()] = ix
+		categoryIDs[ix] = key.String()
 	}
 
-	fmt.Printf("%v", keys)
+	categories, error := c.category.FindByIds(categoryIDs)
 
-	dbRecords := c.db.GetAllCategories(ctx, categoryIDs)
-	if dbRecords != nil {
-		return []*dataloader.Result{{Data: nil}}
+	if error != nil {
+		return []*dataloader.Result{{Data: nil, Error: error}}
+	}
+
+	if len(categories) != len(keys) {
+		return []*dataloader.Result{{Data: nil, Error: nil}}
+	}
+
+	var categoriesModel []*model.Category
+	for _, category := range categories {
+		categoriesModel = append(categoriesModel, &model.Category{
+			ID:          category.ID,
+			Name:        category.Name,
+			Description: &category.Description,
+		})
 	}
 
 	results := make([]*dataloader.Result, len(keys))
 
-	for _, record := range dbRecords {
-		ix, ok := keyOrder[record.ID]
-		if ok {
-			results[ix] = &dataloader.Result{Data: record, Error: nil}
-			delete(keyOrder, record.ID)
+	for index, categoryId := range keys {
+		for _, category := range categoriesModel {
+			if categoryId.String() == category.ID {
+				results[index] = &dataloader.Result{Data: category, Error: nil}
+			}
 		}
-	}
-
-	for categoryID, ix := range keyOrder {
-		err := fmt.Errorf("category not found %s", categoryID)
-		results[ix] = &dataloader.Result{Data: nil, Error: err}
 	}
 
 	return results
