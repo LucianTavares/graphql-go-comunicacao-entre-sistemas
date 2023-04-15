@@ -56,27 +56,28 @@ func For(ctx context.Context) *DataLoader {
 }
 
 func (c *categoryBatcher) get(ctx context.Context, keys dataloader.Keys) []*dataloader.Result {
+
 	categoryIDs := make([]string, len(keys))
 	for ix, key := range keys {
 		categoryIDs[ix] = key.String()
 	}
 
-	categories, error := c.category.FindByIds(categoryIDs)
+	categories, err := c.category.FindByIds(categoryIDs)
 
-	if error != nil {
-		return []*dataloader.Result{{Data: nil, Error: error}}
+	if err != nil {
+		return []*dataloader.Result{{Data: nil, Error: err}}
 	}
-
 	if len(categories) != len(keys) {
 		return []*dataloader.Result{{Data: nil, Error: nil}}
 	}
 
 	var categoriesModel []*model.Category
 	for _, category := range categories {
+
 		categoriesModel = append(categoriesModel, &model.Category{
 			ID:          category.ID,
 			Name:        category.Name,
-			Description: &category.Description,
+			Description: category.Description,
 		})
 	}
 

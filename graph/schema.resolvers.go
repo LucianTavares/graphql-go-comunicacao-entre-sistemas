@@ -44,7 +44,7 @@ func (r *mutationResolver) CreateCategory(ctx context.Context, input model.NewCa
 	return &model.Category{
 		ID:          category.ID,
 		Name:        category.Name,
-		Description: &category.Description,
+		Description: category.Description,
 	}, nil
 }
 
@@ -72,7 +72,7 @@ func (r *queryResolver) Categories(ctx context.Context) ([]*model.Category, erro
 		categoriesModel = append(categoriesModel, &model.Category{
 			ID:          category.ID,
 			Name:        category.Name,
-			Description: &category.Description,
+			Description: category.Description,
 		})
 	}
 	return categoriesModel, nil
