@@ -35,7 +35,8 @@ func main() {
 	}
 
 	srv := handler.NewDefaultServer(generated.NewExecutableSchema(generated.Config{Resolvers: &graph.Resolver{
-		CourseDB: courseDb,
+		CourseDB:   courseDb,
+		CategoryDB: categoryDb,
 	}}))
 
 	dataloaderSrv := dataloader.Middleware(loader, srv)
