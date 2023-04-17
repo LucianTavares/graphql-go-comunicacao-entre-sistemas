@@ -3,7 +3,6 @@ package database
 import (
 	"context"
 	"database/sql"
-	"fmt"
 	"strings"
 
 	"github.com/LucianTavares/comunicacao_entre_sistemas/graphql/graph/model"
@@ -21,55 +20,8 @@ type Categories interface {
 	GetAllCategories(ctx context.Context, categoryIDs []string) []*model.Category
 }
 
-type MemoryStorage struct {
-	db          *sql.DB
-	ID          string
-	Name        string
-	Description string
-	categories  map[string]*model.Category
-	courses     map[string]*model.Course
-}
-
-func NewMemoryStorage() *MemoryStorage {
-	return &MemoryStorage{
-		categories: make(map[string]*model.Category),
-		courses:    make(map[string]*model.Course),
-	}
-}
-
 func NewCategory(db *sql.DB) *Category {
 	return &Category{db: db}
-}
-
-func (m *MemoryStorage) GetAllCategories(ctx context.Context, categoryIDs []string) []*model.Category {
-	fmt.Printf("%v", categoryIDs)
-
-	slice := make([]interface{}, len(categoryIDs))
-	for i, v := range categoryIDs {
-		slice[i] = v
-	}
-
-	rowsCategory, err := m.db.Query("select * from categories")
-	if err != nil {
-		return nil
-	}
-	defer rowsCategory.Close()
-
-	output := make([]*model.Category, 0, len(categoryIDs))
-	for rowsCategory.Next() {
-		var id string
-		if err := rowsCategory.Scan(&id); err != nil {
-			return nil
-		}
-		for _, id := range categoryIDs {
-			if ctg, ok := m.categories[id]; ok {
-				output = append(output, ctg)
-			}
-		}
-	}
-
-	return output
-
 }
 
 func (c *Category) Create(name string, description string) (Category, error) {
@@ -79,7 +31,11 @@ func (c *Category) Create(name string, description string) (Category, error) {
 	if err != nil {
 		return Category{}, err
 	}
-	return Category{ID: id, Name: name, Description: &description}, nil
+	return Category{
+		ID:          id,
+		Name:        name,
+		Description: &description,
+	}, nil
 }
 
 func (c *Category) FindAll() ([]Category, error) {

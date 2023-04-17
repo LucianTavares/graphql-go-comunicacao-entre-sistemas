@@ -11,7 +11,7 @@ type Course struct {
 	db          *sql.DB
 	ID          string
 	Name        string
-	Description string
+	Description *string
 	CategoryID  string
 	Category    Category
 }
@@ -30,7 +30,7 @@ func (c *Course) Create(name, description, categoryID string) (*Course, error) {
 	return &Course{
 		ID:          id,
 		Name:        name,
-		Description: description,
+		Description: &description,
 		CategoryID:  categoryID,
 	}, nil
 }
@@ -43,11 +43,19 @@ func (c *Course) FindAll() ([]Course, error) {
 	defer rows.Close()
 	courses := []Course{}
 	for rows.Next() {
-		var id, name, description, categoryID string
+		var id, name, categoryID string
+		var description sql.NullString
 		if err := rows.Scan(&id, &name, &description, &categoryID); err != nil {
 			return nil, err
 		}
-		courses = append(courses, Course{ID: id, Name: name, Description: description, CategoryID: categoryID})
+		var descriptionPtr *string
+
+		if description.Valid {
+			descriptionPtr = &description.String
+		} else {
+			descriptionPtr = nil
+		}
+		courses = append(courses, Course{ID: id, Name: name, Description: descriptionPtr, CategoryID: categoryID})
 	}
 	return courses, nil
 }
@@ -60,11 +68,19 @@ func (c *Course) FindByCategoryID(categoryID string) ([]Course, error) {
 	defer rows.Close()
 	courses := []Course{}
 	for rows.Next() {
-		var id, name, description, categoryID string
+		var id, name, categoryID string
+		var description sql.NullString
 		if err := rows.Scan(&id, &name, &description, &categoryID); err != nil {
 			return nil, err
 		}
-		courses = append(courses, Course{ID: id, Name: name, Description: description, CategoryID: categoryID})
+		var descriptionPtr *string
+
+		if description.Valid {
+			descriptionPtr = &description.String
+		} else {
+			descriptionPtr = nil
+		}
+		courses = append(courses, Course{ID: id, Name: name, Description: descriptionPtr, CategoryID: categoryID})
 	}
 	return courses, nil
 }
@@ -82,7 +98,7 @@ func (c *Course) FindCategoryInCourse(categoryID string) ([]Course, error) {
 		if err := rowsCourse.Scan(&id, &name, &description, &categoryID); err != nil {
 			return nil, err
 		}
-		courses = append(courses, Course{ID: id, Name: name, Description: description, CategoryID: categoryID})
+		courses = append(courses, Course{ID: id, Name: name, Description: &description, CategoryID: categoryID})
 
 		for _, c := range courses {
 			if c.CategoryID != categoryID {
@@ -105,7 +121,7 @@ func (c *Course) FindCategoryInCourse(categoryID string) ([]Course, error) {
 			}
 			if id == course.CategoryID {
 				categories = append(categories, Category{ID: id, Name: name, Description: &description})
-				courses = append(courses, Course{ID: id, Name: name, Description: description, Category: Category{ID: id, Name: name, Description: &description}})
+				courses = append(courses, Course{ID: id, Name: name, Description: &description, Category: Category{ID: id, Name: name, Description: &description}})
 			}
 		}
 	}

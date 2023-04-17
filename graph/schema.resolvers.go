@@ -23,7 +23,7 @@ func (r *categoryResolver) Courses(ctx context.Context, obj *model.Category) ([]
 		coursesModel = append(coursesModel, &model.Course{
 			ID:          course.ID,
 			Name:        course.Name,
-			Description: &course.Description,
+			Description: course.Description,
 		})
 	}
 	return coursesModel, nil
@@ -57,7 +57,7 @@ func (r *mutationResolver) CreateCourse(ctx context.Context, input model.NewCour
 	return &model.Course{
 		ID:          course.ID,
 		Name:        course.Name,
-		Description: &course.Description,
+		Description: course.Description,
 	}, nil
 }
 
@@ -82,34 +82,6 @@ func (r *queryResolver) Categories(ctx context.Context) ([]*model.Category, erro
 // Courses is the resolver for the courses field.
 func (r *queryResolver) Courses(ctx context.Context) ([]*model.Course, error) {
 	var coursesModel []*model.Course
-	// // fields := graphql.CollectFieldsCtx(ctx, nil)
-	// fields := graphql.CollectAllFields(ctx)
-	// if fields[len(fields)-1] == "category" {
-	// 	courses, err := r.CourseDB.FindCategoryInCourse(r.CourseDB.CategoryID)
-	// 	if err != nil {
-	// 		return nil, err
-	// 	}
-	// 	categoryIDs := []string{}
-	// 	for _, course := range courses {
-	// 		coursesModel = append(coursesModel, &model.Course{
-	// 			ID:          course.ID,
-	// 			Name:        course.Name,
-	// 			Description: &course.Description,
-	// 		})
-
-	// 		uniquesID := make(map[string]bool)
-
-	// 		for _, id := range categoryIDs {
-	// 			if uniquesID[id] {
-	// 				uniquesID[id] = true
-	// 				categoryIDs = append(categoryIDs, id)
-	// 			}
-	// 		}
-
-	// 	}
-	// 	return coursesModel, nil
-
-	// } else {
 	courses, err := r.CourseDB.FindAll()
 	if err != nil {
 		return nil, err
@@ -118,7 +90,7 @@ func (r *queryResolver) Courses(ctx context.Context) ([]*model.Course, error) {
 		coursesModel = append(coursesModel, &model.Course{
 			ID:          course.ID,
 			Name:        course.Name,
-			Description: &course.Description,
+			Description: course.Description,
 			CategoryID:  course.CategoryID,
 		})
 	}
