@@ -90,11 +90,19 @@ func (c *Category) FindAll() ([]Category, error) {
 	defer rows.Close()
 	categories := []Category{}
 	for rows.Next() {
-		var id, name, description string
+		var id, name string
+		var description sql.NullString
 		if err := rows.Scan(&id, &name, &description); err != nil {
 			return nil, err
 		}
-		categories = append(categories, Category{ID: id, Name: name, Description: &description})
+		var descriptionPtr *string
+
+		if description.Valid {
+			descriptionPtr = &description.String
+		} else {
+			descriptionPtr = nil
+		}
+		categories = append(categories, Category{ID: id, Name: name, Description: descriptionPtr})
 	}
 	return categories, nil
 }
